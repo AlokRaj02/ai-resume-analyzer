@@ -142,7 +142,11 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     } catch (err) {
         console.error("Analysis Error:", err);
-        res.status(500).json({ error: "An error occurred during analysis" });
+        const errMsg = err.message || '';
+        if (errMsg.includes('credit balance is too low')) {
+            return res.status(402).json({ error: "Claude API Error: Your Anthropic account is out of credits. Please switch back to Gemini Neural." });
+        }
+        res.status(500).json({ error: errMsg || "An error occurred during analysis" });
     }
 });
 
