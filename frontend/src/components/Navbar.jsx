@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FileSearch, Clock, Home, Palette, BookOpen, User } from 'lucide-react';
+import { FileSearch, Clock, Home, Palette, BookOpen, User, LogOut } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { AuthContext } from '../context/AuthContext';
+import AuthModal from './auth/AuthModal';
 
 const Navbar = () => {
   const location = useLocation();
   const { theme, setTheme, themes } = useTheme();
+  const { user, logout } = useContext(AuthContext);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   return (
     <>
@@ -56,12 +60,27 @@ const Navbar = () => {
           </Link>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.8rem', border: '1px solid var(--primary-color)', borderRadius: '4px', background: 'rgba(0, 204, 255, 0.1)' }}>
-          <User size={16} color="var(--primary-color)" />
-          <span style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontFamily: 'var(--font-secondary)', textShadow: '0 0 5px var(--primary-color)' }}>[ GUEST_ACCESS ]</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.8rem', border: '1px solid var(--success)', borderRadius: '4px', background: 'rgba(0, 255, 0, 0.1)' }}>
+                <User size={16} color="var(--success)" />
+                <span style={{ fontSize: '0.8rem', color: 'var(--success)', fontFamily: 'var(--font-secondary)', textShadow: '0 0 5px var(--success)', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</span>
+              </div>
+              <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem', border: '1px solid var(--danger)', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', cursor: 'pointer', outline: 'none' }}>
+                <LogOut size={16} /> <span className="hide-on-mobile">LOGOUT</span>
+              </button>
+            </div>
+          ) : (
+            <div onClick={() => setIsAuthOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.8rem', border: '1px solid var(--primary-color)', borderRadius: '4px', background: 'rgba(0, 204, 255, 0.1)', cursor: 'pointer', transition: 'var(--transition)' }}>
+              <User size={16} color="var(--primary-color)" />
+              <span style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontFamily: 'var(--font-secondary)', textShadow: '0 0 5px var(--primary-color)' }}>[ LOGIN / REGISTER ]</span>
+            </div>
+          )}
         </div>
       </div>
     </nav>
+    <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     <style dangerouslySetInnerHTML={{__html: `
       @media (max-width: 900px) {
         .hide-on-mobile { display: none !important; }

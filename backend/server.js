@@ -3,10 +3,14 @@ import cors from 'cors';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
-import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { connectDB } from './db.js';
 import Analysis from './models/Analysis.js';
+import User from './models/User.js';
+import { protect, optionalAuth } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -44,9 +48,106 @@ You must return only a valid JSON response with the following structure, and not
 `;
 
 /**
+ * Authentication Routes
+ */
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+        const existing = await User.findOne({ email });
+        if (existing) return res.status(400).json({ error: "User already exists" });
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const user = await User.create({ email, password: hashedPassword });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret_cyber_ai', { expiresIn: '30d' });
+        res.status(201).json({ token, id: user._id, email: user.email });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Registration failed" });
+    }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (user && (await bcrypt.compare(password, user.password))) {
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret_cyber_ai', { expiresIn: '30d' });
+            res.json({ token, id: user._id, email: user.email });
+        } else {
+            res.status(401).json({ error: "Invalid email or password" });
+        }
+    } catch (e) {
+        res.status(500).json({ error: "Login failed" });
+    }
+});
+
+// Configure Nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetOtp = await bcrypt.hash(otp, 10);
+        user.otpExpiry = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            return res.status(500).json({ error: "Email provider not configured on server." });
+        }
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'RESUME AI: Password Reset OTP',
+            text: `SYSTEM OVERRIDE INITIATED.\n\nYour Authorization OTP is: ${otp}\n\nThis OTP expires in 10 minutes.`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ message: "OTP sent to email" });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to send email" });
+    }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const user = await User.findOne({ email });
+        
+        if (!user || !user.resetOtp || !user.otpExpiry) return res.status(400).json({ error: "Invalid request" });
+        if (Date.now() > user.otpExpiry) return res.status(400).json({ error: "OTP expired" });
+
+        const isMatch = await bcrypt.compare(otp, user.resetOtp);
+        if (!isMatch) return res.status(400).json({ error: "Invalid OTP" });
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.resetOtp = undefined;
+        user.otpExpiry = undefined;
+        await user.save();
+
+        res.json({ message: "Password reset successful" });
+    } catch (e) {
+        res.status(500).json({ error: "Password reset failed" });
+    }
+});
+
+/**
  * Endpoint to analyze resume and job description
  */
-app.post('/api/analyze', upload.single('resume'), async (req, res) => {
+app.post('/api/analyze', optionalAuth, upload.single('resume'), async (req, res) => {
     try {
         const { job_description } = req.body;
         const file = req.file;
@@ -97,6 +198,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
         // 3. Save to database
         const newAnalysis = await Analysis.create({
+            userId: req.user ? req.user._id : undefined,
             resume_text,
             job_description,
             score: aiResult.score,
@@ -123,9 +225,9 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 /**
  * Endpoint to get history
  */
-app.get('/api/history', async (req, res) => {
+app.get('/api/history', protect, async (req, res) => {
     try {
-        const history = await Analysis.find().sort({ created_at: -1 }).limit(20);
+        const history = await Analysis.find({ userId: req.user._id }).sort({ created_at: -1 }).limit(20);
         
         // Map History to match previous shape if needed
         const result = history.map(item => ({

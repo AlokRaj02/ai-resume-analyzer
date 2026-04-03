@@ -7,6 +7,7 @@ const History = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [authError, setAuthError] = useState(false);
     const [expandedId, setExpandedId] = useState(null);
     const navigate = useNavigate();
 
@@ -20,8 +21,12 @@ const History = () => {
                 const res = await axios.get('/api/history');
                 setHistory(res.data);
             } catch (err) {
+                if (err.response?.status === 401) {
+                    setAuthError(true);
+                } else {
+                    setError('Failed to load history');
+                }
                 console.error(err);
-                setError('Failed to load history');
             } finally {
                 setLoading(false);
             }
@@ -31,6 +36,15 @@ const History = () => {
 
     if (loading) {
         return <div className="text-center mt-8"><h2>Loading history...</h2></div>;
+    }
+
+    if (authError) {
+        return (
+            <div className="card text-center" style={{ padding: '4rem 2rem', border: '1px solid var(--danger)', marginTop: '2rem' }}>
+                <h2 style={{ color: 'var(--danger)', marginBottom: '1rem' }}>SECURITY CLEARANCE REQUIRED</h2>
+                <p style={{ color: 'var(--text-muted)' }}>Please sign in to access your personal archives.</p>
+            </div>
+        );
     }
 
     if (error) {

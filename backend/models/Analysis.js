@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const AnalysisSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false
+    },
     resume_text: {
         type: String,
         required: true
