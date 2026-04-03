@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { X, Mail, Lock, UserPlus, Key, LogIn, Send } from 'lucide-react';
+import React, { useState, useContext, useEffect } from 'react';
+import { X, Mail, Lock, UserPlus, Key, LogIn, Send, User as UserIcon, Phone, Calendar } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -7,10 +7,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const { login } = useContext(AuthContext);
     const [mode, setMode] = useState(initialMode); // login | register | forgot | reset
     
-    React.useEffect(() => {
+    useEffect(() => {
         if (isOpen) setMode(initialMode);
     }, [isOpen, initialMode]);
     
+    const [username, setUsername] = useState('');
+    const [dob, setDob] = useState('');
+    const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [otp, setOtp] = useState('');
@@ -31,7 +34,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 login(res.data.token, res.data.email);
                 onClose();
             } else if (mode === 'register') {
-                const res = await axios.post('/api/auth/register', { email, password });
+                const res = await axios.post('/api/auth/register', { username, email, dob, password, phone_number: phone });
                 login(res.data.token, res.data.email);
                 onClose();
             } else if (mode === 'forgot') {
@@ -64,6 +67,23 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     
+                    {mode === 'register' && (
+                        <>
+                            <div style={{ position: 'relative' }}>
+                                <UserIcon size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input type="text" placeholder="Full Name" required value={username} onChange={e=>setUsername(e.target.value)} style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', outline: 'none' }} />
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <Calendar size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input type="date" required value={dob} onChange={e=>setDob(e.target.value)} style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', outline: 'none', colorScheme: 'dark' }} />
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <Phone size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input type="tel" placeholder="Phone Number" required value={phone} onChange={e=>setPhone(e.target.value)} style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', outline: 'none' }} />
+                            </div>
+                        </>
+                    )}
+
                     <div style={{ position: 'relative' }}>
                         <Mail size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                         <input type="email" placeholder="Email Address" required value={email} onChange={e=>setEmail(e.target.value)} disabled={mode==='reset'} style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border-color)', color: '#fff', borderRadius: '4px', outline: 'none' }} />

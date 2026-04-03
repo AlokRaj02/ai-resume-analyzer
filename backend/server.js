@@ -52,13 +52,13 @@ You must return only a valid JSON response with the following structure, and not
  */
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+        const { username, email, dob, password, phone_number } = req.body;
+        if (!email || !password || !username || !dob || !phone_number) return res.status(400).json({ error: "All fields are required" });
         const existing = await User.findOne({ email });
         if (existing) return res.status(400).json({ error: "User already exists" });
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const user = await User.create({ email, password: hashedPassword });
+        const user = await User.create({ username, email, dob, password: hashedPassword, phone_number });
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret_cyber_ai', { expiresIn: '30d' });
         res.status(201).json({ token, id: user._id, email: user.email });
     } catch (e) {
