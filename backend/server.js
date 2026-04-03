@@ -29,9 +29,9 @@ connectDB();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Initialize Gemini and Claude API clients
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+// Initialize Gemini and Claude API clients safely
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'MISSING' });
+const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY || 'MISSING' });
 
 // System prompt for structured AI response
 const AI_PROMPT = `You are an expert ATS (Applicant Tracking System) and senior recruiter.
@@ -171,8 +171,10 @@ app.get('/api/history', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+}
 
 export default app;
