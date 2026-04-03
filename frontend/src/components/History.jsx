@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Clock, ExternalLink } from 'lucide-react';
+import { Clock, ExternalLink, Zap, BrainCircuit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const History = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [expandedId, setExpandedId] = useState(null);
     const navigate = useNavigate();
+
+    const toggleExpand = (id) => {
+        setExpandedId(expandedId === id ? null : id);
+    };
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -52,31 +57,58 @@ const History = () => {
                         else if (item.score >= 50) scoreColor = 'var(--warning)';
 
                         return (
-                            <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Analysis #{item.id}</h3>
-                                    <p className="text-muted" style={{ fontSize: '0.875rem' }}>{date}</p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
-                                        {item.missing_skills?.slice(0, 3).map((skill, idx) => (
-                                            <span key={idx} style={{ background: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', border: '1px solid var(--border-color)' }}>
-                                                {skill}
-                                            </span>
-                                        ))}
-                                        {item.missing_skills?.length > 3 && (
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>+{item.missing_skills.length - 3} more missing</span>
-                                        )}
+                            <div key={item.id} className="card" style={{ padding: '1.5rem', cursor: 'pointer', transition: 'all 0.3s' }} onClick={() => toggleExpand(item.id)}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                            <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Analysis</h3>
+                                            {item.ai_model === 'claude' ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.1rem 0.5rem', borderRadius: '12px', background: 'rgba(0, 255, 0, 0.1)', color: 'var(--success)', fontSize: '0.7rem', border: '1px solid var(--success)' }}>
+                                                    <BrainCircuit size={12} /> CLAUDE
+                                                </span>
+                                            ) : (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.1rem 0.5rem', borderRadius: '12px', background: 'rgba(0, 204, 255, 0.1)', color: 'var(--primary-color)', fontSize: '0.7rem', border: '1px solid var(--primary-color)' }}>
+                                                    <Zap size={12} /> GEMINI
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-muted" style={{ fontSize: '0.875rem' }}>{date}</p>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
+                                            {item.missing_skills?.slice(0, 3).map((skill, idx) => (
+                                                <span key={idx} style={{ background: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', border: '1px solid var(--border-color)' }}>
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                            {item.missing_skills?.length > 3 && (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>+{item.missing_skills.length - 3} more missing</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: scoreColor }}>{item.score}%</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Match Score</div>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '2rem', fontWeight: 800, color: scoreColor }}>{item.score}%</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Match Score</div>
+
+                                {expandedId === item.id && (
+                                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap' }} className="animate-fade-in">
+                                        <div style={{ flex: '1 1 45%' }}>
+                                            <h4 style={{ color: 'var(--primary-color)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>// INPUT: RESUME TEXT</h4>
+                                            <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>
+                                                {item.resume_text || 'No resume text available for this record.'}
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: '1 1 45%' }}>
+                                            <h4 style={{ color: 'var(--primary-color)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>// TARGET: JOB DESCRIPTION</h4>
+                                            <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>
+                                                {item.job_description || 'No job description available for this record.'}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button disabled className="btn btn-outline" style={{ display: 'none' }} title="Viewing full past analysis not fully implemented yet">
-                                        <ExternalLink size={18} />
-                                    </button>
-                                </div>
+                                )}
                             </div>
                         )
                     })}

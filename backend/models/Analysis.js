@@ -21,6 +21,10 @@ const AnalysisSchema = new mongoose.Schema({
         type: Object,
         default: {}
     },
+    ai_model: {
+        type: String,
+        default: 'gemini'
+    },
     created_at: {
         type: Date,
         default: Date.now
