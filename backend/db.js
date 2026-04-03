@@ -9,6 +9,6 @@ export const connectDB = async () => {
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (err) {
         console.error(`Error connecting to MongoDB: ${err.message}`);
-        process.exit(1);
+        // Do not process.exit(1) on serverless, allowing API routes to return 500 cleanly instead of killing the container.
     }
 };
