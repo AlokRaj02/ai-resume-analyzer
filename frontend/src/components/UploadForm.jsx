@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, FileText, Briefcase, Zap, BrainCircuit, ChevronRight, Loader2, Terminal, Activity } from 'lucide-react';
+import { UploadCloud, FileText, Briefcase, ChevronRight, Loader2, Terminal, Activity } from 'lucide-react';
 import axios from 'axios';
 
 import ParticleNetwork from './animations/ParticleNetwork';
@@ -18,7 +18,6 @@ import LiveActivityFeed from './homepage/LiveActivityFeed';
 const UploadForm = () => {
   const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
-  const [model, setModel] = useState('gemini');
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
@@ -55,7 +54,6 @@ const UploadForm = () => {
     const formData = new FormData();
     formData.append('resume', file);
     formData.append('job_description', jobDescription);
-    formData.append('model', model);
 
     try {
       const response = await axios.post('/api/analyze', formData, {
@@ -97,23 +95,7 @@ const UploadForm = () => {
           <GlobalStats />
         </div>
 
-        {/* ENGINE SELECTOR */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '30px', padding: '0.3rem', border: '1px solid var(--border-color)' }}>
-            <button 
-              onClick={() => setModel('gemini')}
-              style={{ padding: '0.8rem 1.5rem', borderRadius: '30px', border: 'none', background: model === 'gemini' ? 'var(--primary-color)' : 'transparent', color: model === 'gemini' ? '#000' : 'var(--text-color)', fontWeight: 'bold', cursor: 'pointer', transition: 'var(--transition)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <Zap size={18} /> GEMINI NEURAL
-            </button>
-            <button 
-              onClick={() => setModel('claude')}
-              style={{ padding: '0.8rem 1.5rem', borderRadius: '30px', border: 'none', background: model === 'claude' ? 'var(--success)' : 'transparent', color: model === 'claude' ? '#000' : 'var(--text-color)', fontWeight: 'bold', cursor: 'pointer', transition: 'var(--transition)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <BrainCircuit size={18} /> CLAUDE COGNITIVE
-            </button>
-          </div>
-        </div>
+
 
         {/* UPLOAD CARDS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>

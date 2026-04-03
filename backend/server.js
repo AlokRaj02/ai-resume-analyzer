@@ -7,7 +7,6 @@ const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import Anthropic from '@anthropic-ai/sdk';
 import { connectDB } from './db.js';
 import Analysis from './models/Analysis.js';
 
@@ -29,9 +28,8 @@ connectDB();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Initialize Gemini and Claude API clients safely
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'MISSING' });
-const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY || 'MISSING' });
+// Initialize Gemini API client
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // System prompt for structured AI response
 const AI_PROMPT = `You are an expert ATS (Applicant Tracking System) and senior recruiter.
@@ -52,7 +50,7 @@ You must return only a valid JSON response with the following structure, and not
  */
 app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     try {
-        const { job_description, model } = req.body;
+        const { job_description } = req.body;
         const file = req.file;
 
         if (!file || !job_description) {
@@ -73,39 +71,17 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
         }
 
         // 2. Call AI API
-        let aiText = '';
-        if (model === 'claude') {
-            const msg = await anthropic.messages.create({
-                model: "claude-3-haiku-20240307",
-                max_tokens: 1500,
-                temperature: 0.1,
-                system: AI_PROMPT,
-                messages: [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": `RESUME:\n${resume_text}\n\nJOB DESCRIPTION:\n${job_description}`
-                            }
-                        ]
-                    }
-                ]
-            });
-            aiText = msg.content[0].text;
-        } else {
-            const response = await ai.models.generateContent({
-                 model: 'gemini-2.5-flash',
-                 contents: [
-                     { text: AI_PROMPT },
-                     { text: `RESUME:\\n${resume_text}\\n\\nJOB DESCRIPTION:\\n${job_description}` }
-                 ],
-                 config: {
-                     responseMimeType: 'application/json'
-                 }
-            });
-            aiText = response.text;
-        }
+        const response = await ai.models.generateContent({
+             model: 'gemini-2.5-flash',
+             contents: [
+                 { text: AI_PROMPT },
+                 { text: `RESUME:\n${resume_text}\n\nJOB DESCRIPTION:\n${job_description}` }
+             ],
+             config: {
+                 responseMimeType: 'application/json'
+             }
+        });
+        const aiText = response.text;
 
         let aiResult;
         try {
@@ -128,7 +104,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
             score: aiResult.score,
             missing_skills: aiResult.missing_skills,
             feedback: aiResult.feedback,
-            ai_model: model === 'claude' ? 'claude' : 'gemini'
+            ai_model: 'gemini'
         });
         
         // 4. Return result
@@ -142,11 +118,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     } catch (err) {
         console.error("Analysis Error:", err);
-        const errMsg = err.message || '';
-        if (errMsg.includes('credit balance is too low')) {
-            return res.status(402).json({ error: "Claude API Error: Your Anthropic account is out of credits. Please switch back to Gemini Neural." });
-        }
-        res.status(500).json({ error: errMsg || "An error occurred during analysis" });
+        res.status(500).json({ error: err.message || "An error occurred during analysis" });
     }
 });
 
