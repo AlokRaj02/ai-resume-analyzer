@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
