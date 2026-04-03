@@ -3,9 +3,13 @@ import { X, Mail, Lock, UserPlus, Key, LogIn, Send } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 
-const AuthModal = ({ isOpen, onClose }) => {
+const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const { login } = useContext(AuthContext);
-    const [mode, setMode] = useState('login'); // login | register | forgot | reset
+    const [mode, setMode] = useState(initialMode); // login | register | forgot | reset
+    
+    React.useEffect(() => {
+        if (isOpen) setMode(initialMode);
+    }, [isOpen, initialMode]);
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

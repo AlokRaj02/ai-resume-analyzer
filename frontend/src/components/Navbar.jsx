@@ -10,6 +10,12 @@ const Navbar = () => {
   const { theme, setTheme, themes } = useTheme();
   const { user, logout } = useContext(AuthContext);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+
+  const openAuth = (mode) => {
+    setAuthMode(mode);
+    setIsAuthOpen(true);
+  };
 
   return (
     <>
@@ -72,15 +78,19 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <div onClick={() => setIsAuthOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.8rem', border: '1px solid var(--primary-color)', borderRadius: '4px', background: 'rgba(0, 204, 255, 0.1)', cursor: 'pointer', transition: 'var(--transition)' }}>
-              <User size={16} color="var(--primary-color)" />
-              <span style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontFamily: 'var(--font-secondary)', textShadow: '0 0 5px var(--primary-color)' }}>[ LOGIN / REGISTER ]</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <button onClick={() => openAuth('login')} style={{ background: 'transparent', border: '1px solid var(--primary-color)', padding: '0.3rem 0.8rem', borderRadius: '4px', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-secondary)', fontSize: '0.8rem', outline: 'none' }}>
+                <User size={14} /> SIGN IN
+              </button>
+              <button onClick={() => openAuth('register')} style={{ background: 'rgba(0, 204, 255, 0.15)', border: '1px solid var(--primary-color)', padding: '0.3rem 0.8rem', borderRadius: '4px', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-secondary)', fontSize: '0.8rem', outline: 'none', fontWeight: 'bold' }}>
+                SIGN UP
+              </button>
             </div>
           )}
         </div>
       </div>
     </nav>
-    <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+    <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} initialMode={authMode} />
     <style dangerouslySetInnerHTML={{__html: `
       @media (max-width: 900px) {
         .hide-on-mobile { display: none !important; }
