@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -11,6 +13,8 @@ import { connectDB } from './db.js';
 import Analysis from './models/Analysis.js';
 import User from './models/User.js';
 import { protect, optionalAuth } from './middleware/auth.js';
+import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 

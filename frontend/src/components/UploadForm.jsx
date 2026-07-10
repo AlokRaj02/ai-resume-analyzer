@@ -57,7 +57,10 @@ const UploadForm = () => {
 
     try {
       const response = await axios.post('/api/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       navigate('/dashboard', { state: { result: response.data } });
     } catch (err) {
