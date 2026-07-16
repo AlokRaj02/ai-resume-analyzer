@@ -1,218 +1,178 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Terminal, ShieldAlert, Cpu, Sparkles, HelpCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Sparkles, AlertCircle, Bookmark, Compass, HelpCircle } from 'lucide-react';
+import axios from 'axios';
 
 const Docs = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('manual');
+  const [cvInfo, setCvInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const tabs = [
-    { id: 'manual', label: 'OPERATION MANUAL', icon: <HelpCircle size={18} /> },
-    { id: 'engine', label: 'ATS ENGINE & METRICS', icon: <Cpu size={18} /> },
-    { id: 'security', label: 'SECURITY & ACCOUNTS', icon: <ShieldAlert size={18} /> },
-    { id: 'deploy', label: 'DEPLOYMENT ARCHITECTURE', icon: <Terminal size={18} /> }
-  ];
+  useEffect(() => {
+    const loadCVData = async () => {
+      try {
+        // 1. Try loading from localStorage first
+        const localData = localStorage.getItem('latest_analysis');
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          setCvInfo(parsed);
+          setLoading(false);
+          return;
+        }
+
+        // 2. If not in localStorage, fetch their most recent analysis from history
+        const token = localStorage.getItem('token');
+        if (token) {
+          const res = await axios.get('/api/history');
+          if (res.data && res.data.length > 0) {
+            const mostRecent = res.data[0];
+            setCvInfo(mostRecent);
+            localStorage.setItem('latest_analysis', JSON.stringify(mostRecent));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching CV details:', err);
+        setError('Failed to retrieve system archives.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCVData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center mt-8" style={{ padding: '4rem 0' }}>
+        <div style={{ color: 'var(--primary-color)', fontFamily: 'var(--font-primary)' }}>
+          🔄 RETRIEVING CV DATA STREAMS...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container animate-fade-in" style={{ paddingBottom: '3rem', marginTop: '1rem' }}>
-      {/* Header / Navigation back */}
+      {/* Header */}
       <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <button className="btn btn-outline" onClick={() => navigate(-1)}>
           <ArrowLeft size={18} /> BACK
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)' }}>
           <BookOpen size={22} />
-          <span style={{ fontFamily: 'var(--font-primary)', letterSpacing: '1px', fontWeight: 'bold' }}>SYSTEM DOCUMENTATION</span>
+          <span style={{ fontFamily: 'var(--font-primary)', letterSpacing: '1px', fontWeight: 'bold' }}>CV KNOWLEDGE BASE</span>
         </div>
       </div>
 
-      {/* Docs Body with layout: Sidebar on left (for desktop) and Content on right */}
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-        
-        {/* Sidebar Tabs */}
-        <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                width: '100%',
-                padding: '1rem',
-                background: activeTab === tab.id ? 'var(--primary-color)' : 'rgba(0,0,0,0.3)',
-                color: activeTab === tab.id ? '#000' : 'var(--text-color)',
-                border: activeTab === tab.id ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-primary)',
-                fontSize: '0.9rem',
-                fontWeight: 'bold',
-                transition: 'var(--transition)',
-                boxShadow: activeTab === tab.id ? '0 0 15px var(--glow-color)' : 'none'
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+      {/* Main Content */}
+      {!cvInfo ? (
+        /* Empty State: No CV Uploaded */
+        <div className="card text-center" style={{ padding: '4rem 2rem', border: '1px dashed var(--border-color)', animation: 'fadeIn 0.3s' }}>
+          <AlertCircle size={48} className="text-warning" style={{ margin: '0 auto 1.5rem', display: 'block' }} />
+          <h2 style={{ color: 'var(--warning)', fontFamily: 'var(--font-primary)', marginBottom: '1rem' }}>NO ACTIVE CV FOUND</h2>
+          <p className="text-muted" style={{ maxWidth: '500px', margin: '0 auto 2rem' }}>
+            No resume has been analyzed in this session yet. Go to the Hub, upload your CV and target spec, and run the scanner to generate your personalized CV documentation.
+          </p>
+          <button className="btn btn-primary" onClick={() => navigate('/')}>
+            GO TO HUB
+          </button>
         </div>
-
-        {/* Main Content Area */}
-        <div className="card" style={{ flex: '3 1 500px', padding: '2rem', minHeight: '400px' }}>
+      ) : (
+        /* Populated State: CV details identified */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
-          {/* TAB 1: OPERATION MANUAL */}
-          {activeTab === 'manual' && (
-            <div className="animate-fade-in">
-              <h2 style={{ color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1.5rem', fontFamily: 'var(--font-primary)' }}>
-                SYSTEM MANUAL & OPERATIONS
+          {/* Top Panel: Summary Banner */}
+          <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+            <div>
+              <h2 style={{ color: 'var(--primary-color)', fontFamily: 'var(--font-primary)', margin: '0 0 0.5rem 0' }}>
+                PROCESSED CANDIDATE INDEX
               </h2>
+              <p className="text-muted" style={{ margin: 0 }}>
+                This document explains the skills, frameworks, and methodologies found in your analyzed resume.
+              </p>
+            </div>
+            <div style={{ padding: '0.5rem 1.5rem', border: '1px solid var(--primary-color)', borderRadius: '4px', background: 'rgba(0, 243, 255, 0.05)', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>MATCH INDEX</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-color)' }}>{cvInfo.score}%</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+            
+            {/* Left Column: Skills & Explanations */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: '2 1 400px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                <Bookmark size={20} className="text-primary" />
+                <h3 style={{ margin: 0, fontFamily: 'var(--font-primary)', color: 'var(--text-color)' }}>IDENTIFIED COMPETENCIES</h3>
+              </div>
+
+              {cvInfo.cv_explanations && cvInfo.cv_explanations.length > 0 ? (
+                cvInfo.cv_explanations.map((item, idx) => (
+                  <div key={idx} className="card" style={{ borderLeft: '4px solid var(--primary-color)', position: 'relative' }}>
+                    <h4 style={{ color: 'var(--primary-color)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                      <Sparkles size={16} /> {item.skill}
+                    </h4>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                      {item.description}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                /* Fallback if older database record doesn't have explanations */
+                <div className="card text-center" style={{ padding: '2rem' }}>
+                  <p className="text-muted">No specific skill descriptions extracted for this CV. Try scanning a new resume to view definitions here.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Recommendations & Target spec info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: '1 1 300px' }}>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)' }}>
-                    <Sparkles size={16} /> 1. Uploading Resumes
-                  </h3>
-                  <p className="text-muted" style={{ marginLeft: '1.5rem' }}>
-                    Drag and drop your candidate resume in the designated upload box. The system supports **PDF** and **DOCX** files up to **5MB**. Text is extracted instantly using raw buffer decoders.
-                  </p>
+              {/* Missing Skills section */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                  <Compass size={20} className="text-warning" />
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-primary)', color: 'var(--text-color)' }}>SKILLS GAP SUMMARY</h3>
                 </div>
-
-                <div>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)' }}>
-                    <Sparkles size={16} /> 2. Entering Job Specifications
-                  </h3>
-                  <p className="text-muted" style={{ marginLeft: '1.5rem' }}>
-                    Paste the target job description (parameters, expectations, and tech stack requirements) into the **TARGET_SPEC** input panel. A comprehensive spec yields a more precise evaluation.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)' }}>
-                    <Sparkles size={16} /> 3. Parsing & Evaluation
-                  </h3>
-                  <p className="text-muted" style={{ marginLeft: '1.5rem' }}>
-                    Clicking **INITIATE_ANALYSIS** triggers the core processing module, parsing text data and calling the Google Gemini model. It evaluates parameters like skill matching, formatting compliance, and missing keywords.
-                  </p>
+                
+                <div className="card" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <h4 style={{ margin: '0 0 1rem 0', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⚠️ UNRESOLVED SPECIFICATIONS
+                  </h4>
+                  <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', margin: 0 }}>
+                    {cvInfo.missing_skills && cvInfo.missing_skills.length > 0 ? (
+                      cvInfo.missing_skills.map((skill, idx) => (
+                        <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(245, 158, 11, 0.05)', padding: '0.6rem', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '4px', fontSize: '0.9rem' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warning)' }}></span>
+                          <span>{skill}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                        ✅ All targeted job competencies are present in your CV.
+                      </li>
+                    )}
+                  </ul>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* TAB 2: ATS ENGINE & METRICS */}
-          {activeTab === 'engine' && (
-            <div className="animate-fade-in">
-              <h2 style={{ color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1.5rem', fontFamily: 'var(--font-primary)' }}>
-                ATS ENGINE & SCORING METRICS
-              </h2>
-
-              <p className="text-muted" style={{ marginBottom: '1.5rem' }}>
-                The semantic evaluation uses the `@google/genai` library powering `gemini-2.5-flash` to parse alignment between candidate parameters and target profiles.
-              </p>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontFamily: 'var(--font-primary)' }}>SCORE RANGE</th>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontFamily: 'var(--font-primary)' }}>ALIGNMENT VALUE</th>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontFamily: 'var(--font-primary)' }}>ACTION RECOMMENDED</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '1rem 0.75rem', color: 'var(--success)', fontWeight: 'bold' }}>75% - 100%</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>High Fit / Pass</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>Strong fit. Proceed directly to screening.</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '1rem 0.75rem', color: 'var(--warning)', fontWeight: 'bold' }}>50% - 74%</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>Moderate Fit</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>Address missing keywords and optimization tips.</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '1rem 0.75rem', color: 'var(--danger)', fontWeight: 'bold' }}>0% - 49%</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>Low Fit / Reject</td>
-                    <td style={{ padding: '1rem 0.75rem' }}>Significant skills gap. Upskilling required.</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderLeft: '3px solid var(--primary-color)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontFamily: 'var(--font-primary)', color: 'var(--text-color)' }}>AI SYSTEM PROMPT COMPLIANCE</h4>
-                <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
-                  The model extracts missing core skills, suggests resume optimizations, and flags ATS-specific errors (such as complex columns, non-standard fonts, or missing headers) based on senior recruiter standards.
+              {/* Quick Guidance Info */}
+              <div className="card" style={{ border: '1px solid rgba(16, 185, 129, 0.2)', background: 'rgba(16, 185, 129, 0.02)' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  💡 RECIPROCAL STRATEGY
+                </h4>
+                <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                  Study the identified competencies on the left to gain a brief knowledge of your own profile. Use this to prepare for interviews and explain the technologies confidently to senior recruiters.
                 </p>
               </div>
+
             </div>
-          )}
 
-          {/* TAB 3: SECURITY & ACCOUNTS */}
-          {activeTab === 'security' && (
-            <div className="animate-fade-in">
-              <h2 style={{ color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1.5rem', fontFamily: 'var(--font-primary)' }}>
-                SECURITY ARCHITECTURE & ACCESS
-              </h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>🔐 Authentication & JWTs</h3>
-                  <p className="text-muted">
-                    Session integrity is protected by JSON Web Tokens (JWT). When you sign in, the token is saved in browser storage (`localStorage`) and sent automatically in the headers of request logs (`Authorization: Bearer &lt;token&gt;`).
-                  </p>
-                </div>
-
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>🛡️ Database Encryption</h3>
-                  <p className="text-muted">
-                    User credentials (like passwords) are never stored in plain text. We utilize `bcryptjs` with a secure work factor of 10 to hash passwords before database insertion, protecting account security.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>✉️ Password Recovery Flow (OTP)</h3>
-                  <p className="text-muted">
-                    If you request a password reset, a secure 6-digit One-Time Password (OTP) is generated randomly, hashed, stored temporarily with a 10-minute expiration, and sent to your email. Enter the OTP code in the "Verify OTP" form along with your new password to overwrite the security parameters.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: DEPLOYMENT ARCHITECTURE */}
-          {activeTab === 'deploy' && (
-            <div className="animate-fade-in">
-              <h2 style={{ color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1.5rem', fontFamily: 'var(--font-primary)' }}>
-                DEPLOYMENT LOGISTICS
-              </h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>☁️ Render.com (Backend Web Service)</h3>
-                  <p className="text-muted">
-                    The Express application is deployed on Render.com as an independent web service. It binds to the system port dynamically and exposes backend API routes under `https://ai-resume-analyzer-o4s2.onrender.com`.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>⚡ Vercel (Frontend & Serverless Routing)</h3>
-                  <p className="text-muted">
-                    The React SPA assets are deployed on Vercel. Static assets are compiled into the `dist/` directory. Vercel utilizes rewrites defined in `vercel.json` to proxy API requests directly, ensuring seamless routing.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 style={{ color: 'var(--success)' }}>🗄️ Database (MongoDB Atlas)</h3>
-                  <p className="text-muted">
-                    Data storage runs on a multi-region MongoDB Atlas cluster. The database connection maintains secure user and analysis records, linked seamlessly with both Render and Vercel instances.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
 
         </div>
-      </div>
+      )}
     </div>
   );
 };

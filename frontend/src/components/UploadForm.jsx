@@ -62,6 +62,7 @@ const UploadForm = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      localStorage.setItem('latest_analysis', JSON.stringify(response.data));
       navigate('/dashboard', { state: { result: response.data } });
     } catch (err) {
       setError(err.response?.data?.error || 'Analysis failed. Target core offline.');

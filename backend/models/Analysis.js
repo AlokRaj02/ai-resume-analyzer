@@ -30,6 +30,10 @@ const AnalysisSchema = new mongoose.Schema({
         type: [Object],
         default: []
     },
+    cv_explanations: {
+        type: [Object],
+        default: []
+    },
     ai_model: {
         type: String,
         default: 'gemini'

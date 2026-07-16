@@ -52,12 +52,15 @@ You must return only a valid JSON response with the following structure, and not
   "skills_breakdown": [
     { "name": "Skill Name 1", "score": <number between 0 and 100 representing match percentage> }
   ],
+  "cv_explanations": [
+    { "skill": "Skill/Technology Name", "description": "A 1-2 sentence brief educational explanation of what this technology, skill, or concept is and what it is used for." }
+  ],
   "feedback": {
     "suggestions": ["suggestion1", "suggestion2"],
     "ats_tips": ["tip1", "tip2"]
   }
 }
-Please extract the top 4 key skills/competencies required in the job description and score how well the candidate matches each.
+Please extract the top 4 key skills/competencies required in the job description and score how well the candidate matches each. Also, identify the main technologies, languages, frameworks, or methodologies present in the candidate's CV, and provide a brief (1-2 sentences) educational description explaining what each is.
 `;
 
 /**
@@ -217,6 +220,7 @@ app.post('/api/analyze', optionalAuth, upload.single('resume'), async (req, res)
             score: aiResult.score,
             missing_skills: aiResult.missing_skills,
             skills_breakdown: aiResult.skills_breakdown || [],
+            cv_explanations: aiResult.cv_explanations || [],
             feedback: aiResult.feedback,
             ai_model: 'gemini'
         });
@@ -227,6 +231,7 @@ app.post('/api/analyze', optionalAuth, upload.single('resume'), async (req, res)
             score: newAnalysis.score,
             missing_skills: newAnalysis.missing_skills,
             skills_breakdown: newAnalysis.skills_breakdown || [],
+            cv_explanations: newAnalysis.cv_explanations || [],
             feedback: newAnalysis.feedback,
             created_at: newAnalysis.created_at
         });
@@ -250,6 +255,7 @@ app.get('/api/history', protect, async (req, res) => {
             score: item.score,
             missing_skills: item.missing_skills,
             skills_breakdown: item.skills_breakdown || [],
+            cv_explanations: item.cv_explanations || [],
             created_at: item.created_at,
             resume_text: item.resume_text,
             job_description: item.job_description,
