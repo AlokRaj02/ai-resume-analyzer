@@ -12,6 +12,7 @@ const SkillMatchBars = ({ skills }) => {
           <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
             <div 
               style={{ 
+                '--target-width': `${skill.score}%`,
                 width: 0, 
                 height: '100%', 
                 background: 'var(--primary-color)', 

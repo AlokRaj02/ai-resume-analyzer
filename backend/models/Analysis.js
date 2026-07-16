@@ -26,6 +26,10 @@ const AnalysisSchema = new mongoose.Schema({
         type: Object,
         default: {}
     },
+    skills_breakdown: {
+        type: [Object],
+        default: []
+    },
     ai_model: {
         type: String,
         default: 'gemini'
