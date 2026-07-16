@@ -30,6 +30,11 @@ app.use(express.json());
 // Connect to MongoDB
 connectDB();
 
+app.get('/', (req, res) => {
+    res.json({ message: "AI Resume Analyzer API is running successfully!" });
+});
+
+
 // File upload setup (store in memory for quick processing)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
