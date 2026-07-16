@@ -251,7 +251,7 @@ app.get('/api/history', protect, async (req, res) => {
     }
 });
 
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL || process.env.RENDER) {
     app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });
