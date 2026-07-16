@@ -59,8 +59,8 @@ const Navbar = () => {
               <Clock size={18} /> ARCHIVE
             </span>
           </Link>
-          <Link to="#" className="nav-link hide-on-mobile">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', opacity: 0.7 }}>
+          <Link to="/docs" className={`nav-link ${location.pathname === '/docs' ? 'active' : ''}`}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               <BookOpen size={18} /> DOCS
             </span>
           </Link>
